@@ -20,7 +20,8 @@
 TITLE PACMAN					(main.asm)
 INCLUDE Irvine32.inc
 .data
-
+currentDirection byte 0	;0=stationary 1=left 2=right 3=up 4=down
+isMoving byte 0
 .code
 main PROC
 	Call Clrscr
@@ -29,7 +30,9 @@ main PROC
 
 	GameLoop:
 		mov eax,0
+		Call ReadChar
 		Call HandleInput
+
 		mov eax,75
 		Call Delay
 	loop GameLoop
@@ -59,24 +62,23 @@ ClearRegs ENDP
 ;							  ;
 ;/////////////////////////////;
 HandleInput proc
-	Call ReadChar
-
-	cmp al,61h
+	
+	cmp al,61h	;if(inp=='a') moveleft else checkright
 	je MoveLeft
 	jmp CheckRight
 
 	CheckRight:
-		cmp al,64h
+		cmp al,64h	;if(inp=='d') moveright else checkdown
 		je MoveRight
 		jmp CheckDown
 
 	CheckDown:
-		cmp al,73h
+		cmp al,73h	;if(inp=='s') movedown else checkup
 		je MoveDown
 		jmp CheckUp
 
 	CheckUp:
-		cmp al,77h
+		cmp al,77h	;if(inp=='w') moveup else exit
 		je MoveUp
 		jmp exitInp
 
@@ -86,6 +88,8 @@ HandleInput proc
 		call GotoXY
 		mov al,'^'	
 		call writechar
+		mov isMoving,1
+		
 		jmp exitInp
 
 	MoveUp:
@@ -94,6 +98,7 @@ HandleInput proc
 		call GotoXY
 		mov al,'V'
 		call writechar
+		mov isMoving,1
 		jmp exitInp
 
 	MoveRight:
@@ -102,6 +107,9 @@ HandleInput proc
 		call GotoXY
 		mov al,'<'
 		call writechar
+		mov isMoving,1
+
+
 		jmp exitInp
 
 	MoveLeft:
@@ -110,13 +118,12 @@ HandleInput proc
 		call GotoXY
 		mov al,'>'
 		call writechar
+		mov isMoving,1
 		jmp exitInp
 
 	exitInp:
-
+		mov currentDirection,al
 ret
 HandleInput ENDP
-
-
 
 END main

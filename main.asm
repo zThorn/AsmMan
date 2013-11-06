@@ -15,26 +15,58 @@
 ;P::::::::P A:::::A                 A:::::A CCC::::::::::::CM::::::M               M::::::M A:::::A                 A:::::A N::::::N        N::::::N
 ;PPPPPPPPPPAAAAAAA                   AAAAAAA   CCCCCCCCCCCCCMMMMMMMM               MMMMMMMMAAAAAAA                   AAAAAAANNNNNNNN         NNNNNNN
 
-
-
 TITLE PACMAN					(main.asm)
 INCLUDE Irvine32.inc
+
 .data
-currentDirection byte 0	;0=stationary 1=left 2=right 3=up 4=down
-isMoving byte 0
+
+;///////////////////////////////////////////
+;Strings for the Title Bar                 ;
+;///////////////////////////////////////////
+
+scoreTitle byte "Score: ",0
+livesTitle byte "Lives: ",0
+mainTitle byte "ASM-MAN        {* *} {* *} {* *}  < * * * * * * *",0
+
+;///////////////////////////////////////////
+;Variables for Game Logic                  ;
+;///////////////////////////////////////////
+
+score byte 0	;Keeps track of player score
+lives byte 3	;PlayerLives
+
+;//////////////////////////;
+;Variables for Ghost Logic ;
+;//////////////////////////;
+ghostX byte 20
+ghostY byte 20
+
+
+;//////////////////////////;
+;Variables for Player Logic;
+;//////////////////////////;
+playerX byte 35
+playerY byte 13
+
 .code
+
 main PROC
 	Call Clrscr
 	Call ClearRegs
+	Call InitialSetup
+	Call InitGhost
 	MOV ECX,-1
 
 	GameLoop:
+		Call DrawTitleBar
 		mov eax,0
+
 		Call ReadChar
 		Call HandleInput
-
-		mov eax,75
-		Call Delay
+		Call GhostLogic
+		
+		;mov eax,75
+		;Call Delay
 	loop GameLoop
 
 	exit
@@ -53,6 +85,116 @@ ClearRegs proc
 ClearRegs ENDP
 
 
+;//////////////////////////////
+;/////////////////////////////;
+;							  ;
+;  Main Procedure that places ;
+;   pacmans initial position  ;       
+;  Uses Registers             ;
+;  EAX, EDX                   ;
+;							  ;
+;/////////////////////////////;
+;//////////////////////////////
+
+initialSetup proc
+	mov dh,13
+	mov dl,35
+	Call GotoXY
+	mov al,'<'
+	Call WriteChar
+ret
+initialSetup ENDP
+
+initGhost PROC uses edx eax 
+	mov dh,20
+	mov dl,20
+	Call GotoXY
+
+	mov al,'G'
+	Call WriteChar
+ret
+initGhost ENDP
+
+ghostLogic PROC
+	mov dh,ghostY
+	mov dl,ghostX
+
+	cmp dh,playerY
+	jl ghostIsBelowPlayer
+	jge ghostIsAbovePlayer
+
+	ghostIsBelowPlayer:
+		inc dh
+		inc ghostY
+		mov dh,ghostY
+		mov dl,ghostX
+
+		mov ghostY,dh
+		jmp checkX
+
+	ghostIsAbovePlayer:
+		dec dh
+		dec ghostY
+		mov dh,ghostY
+		mov dl,ghostX
+
+		mov ghostY,dh
+		jmp checkX
+
+	checkX:
+		cmp dl,playerX
+		jg ghostIsRightOfPlayer
+		jle ghostIsLeftOfPlayer
+
+	ghostIsRightOfPlayer:
+		dec dl
+		dec ghostX
+		mov dl,ghostX
+		mov dh,ghostY
+		Call GotoXY
+
+		mov al,'G'
+		Call WriteChar
+		mov ghostX,dl
+		jmp checkIfPlayerKilled
+
+	ghostIsLeftOfPlayer:
+		inc dl
+		inc ghostX
+		mov dl,ghostX
+		mov dh,ghostY
+		Call GotoXY
+
+		mov al,'G'
+		Call WriteChar
+		mov ghostX,dl
+		jmp checkIfPlayerKilled
+
+		checkIfPlayerKilled:
+			cmp dh,playerY
+			je checkPlayerGhostX
+			jmp eProc
+
+		checkPlayerGhostX:
+			cmp dl,playerX
+			je playerDead
+			jmp eProc
+
+		playerDead:
+			dec lives
+
+			cmp lives,0
+			je gameover
+			jmp eProc
+		gameover:
+			exit
+		eProc:
+
+
+ret
+ghostLogic ENDP
+
+;//////////////////////////////
 ;/////////////////////////////;
 ;							  ;
 ;  Main Procedure that handles;
@@ -61,7 +203,9 @@ ClearRegs ENDP
 ;  EAX, EDX                   ;
 ;							  ;
 ;/////////////////////////////;
-HandleInput proc
+;//////////////////////////////
+
+HandleInput proc uses eax edx
 	
 	cmp al,61h	;if(inp=='a') moveleft else checkright
 	je MoveLeft
@@ -84,46 +228,168 @@ HandleInput proc
 
 	MoveDown:
 		inc dh
-		call ClrScr
-		call GotoXY
+		inc playerY
+		mov dh,playerY
+		mov dl,playerX
+		Call ClrScr
+		Call GotoXY
 		mov al,'^'	
-		call writechar
-		mov isMoving,1
-		
+		mov playerY,dh
+		Call writechar
+		Call IncrementScore
 		jmp exitInp
 
 	MoveUp:
 		dec dh
-		call ClrScr
-		call GotoXY
+		dec playerY
+		mov dh,playerY
+		mov dl,playerX
+		Call ClrScr
+		Call GotoXY
 		mov al,'V'
-		call writechar
-		mov isMoving,1
+		mov playerY,dh
+		Call WriteChar
+		Call IncrementScore
 		jmp exitInp
 
 	MoveRight:
 		inc dl
-		call ClrScr
-		call GotoXY
+		inc playerX
+		mov dh,playerY
+		mov dl,playerX
+		Call ClrScr
+		Call GotoXY
 		mov al,'<'
-		call writechar
-		mov isMoving,1
-
-
+		mov playerX,dl
+		Call WriteChar
+		Call IncrementScore
 		jmp exitInp
 
 	MoveLeft:
 		dec dl
-		call ClrScr
-		call GotoXY
+		dec playerX
+		mov dh,playerY
+		mov dl,playerX
+		Call ClrScr
+		Call GotoXY
 		mov al,'>'
-		call writechar
-		mov isMoving,1
+		mov playerX,dl
+
+		Call WriteChar
+		Call IncrementScore
 		jmp exitInp
 
 	exitInp:
-		mov currentDirection,al
+		
 ret
 HandleInput ENDP
+
+
+
+;//////////////////////////////
+;/////////////////////////////;
+;							  ;
+;  Main Procedure draws the   ;
+;   players current score     ;
+;  Uses Registers             ;
+;  EAX, EDX                   ;
+;							  ;
+;/////////////////////////////;
+;//////////////////////////////
+
+displayScore PROC USES edx eax
+	mov eax,0
+	mov dh,0
+	mov dl,69
+
+	Call GotoXY
+	mov al,score
+	mov edx,offset scoreTitle
+	Call WriteString
+	Call WriteInt
+ret
+displayScore ENDP
+
+
+;//////////////////////////////
+;/////////////////////////////;
+;							  ;
+;  Main Procedure displays    ;
+;  the players current lives  ;
+;  Uses Registers             ;
+;  EAX, EDX                   ;
+;							  ;
+;/////////////////////////////;
+;//////////////////////////////
+
+displayLives PROC uses eax edx
+	mov eax,0
+	mov dh,0
+	mov dl,55
+	Call GotoXY
+
+	mov al,lives
+	mov edx,offset livesTitle
+
+	Call WriteString
+	Call WriteInt
+
+ret
+displayLives ENDP
+
+
+;//////////////////////////////
+;/////////////////////////////;
+;							  ;
+;  Main Procedure that draws  ;
+;  the title bar boundaries,  ;
+;  as well as the title bar   ;
+;  text                       ;
+;  Uses Registers             ;
+;  EAX, ECX, EDX              ;
+;							  ;
+;/////////////////////////////;
+;//////////////////////////////
+drawTitleBar PROC uses eax ecx edx
+	mov eax,'-'
+	mov dh,1
+	mov ecx,79
+	
+	L1:
+		mov dl,cl
+		Call GotoXY
+		Call WriteChar
+
+	loop L1
+
+	mov dh,0
+	mov dl,0
+	Call GotoXY
+
+	mov edx,offset mainTitle
+	Call writestring
+
+	Call displayLives
+	Call displayScore
+ret
+drawTitleBar ENDP
+
+
+;/////////////////////////////////;
+;Wrapper for inc, increments Score;
+;/////////////////////////////////;
+IncrementScore PROC
+	inc score
+	ret
+IncrementScore ENDP
+
+
+;/////////////////////////////////;
+;Wrapper for inc, increments Lives;
+;/////////////////////////////////;
+playerDeath PROC
+	dec lives
+	ret
+playerDeath ENDP
 
 END main

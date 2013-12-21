@@ -1,0 +1,16 @@
+           PPPPPPPPPPPPPPP               A                       CCCCCCCCCCC  
+           P::::::::::::::P             A:A                   CCC::::::::::C  
+           P::::PPPPPP:::::P           A:::A                CC:::::::::::::C  
+           P::::P     P:::::P         A:::::A              C::::CCCCCCCC:::C  
+           P::::P     P:::::P        A:::::::A            C::::C       CCCCC  
+           P::::P     P:::::P       A::::A::::A          C::::C               
+           P::::PPPPPP:::::P       A::::A A::::A         C::::C               
+           P:::::::::::::PP       A::::A   A::::A        C::::C               
+           P::::PPPPPPPPP        A::::A     A::::A       C::::C               
+           P::::P               A::::AAAAAAAAA::::A      C::::C               
+           P::::P              A:::::::::::::::::::A     C::::C               
+           P::::P             A::::AAAAAAAAAAAAA::::A     C::::C       CCCCC  
+           P::::P            A::::A             A::::A     C::::CCCCCCCC:::C  
+           P::::P           A::::A               A::::A     CC:::::::::::::C  
+           P::::P          A::::A                 A::::A      CCC::::::::::C  
+           PPPPPP         AAAAAA                   AAAAAA        CCCCCCCCCCC  
